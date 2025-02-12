@@ -6,13 +6,13 @@ const UserSchema = new Schema({
     password: {type: String, required: true},
     role: {
         type: String,
-        enum: ['business','buyer','transporter','seller'],
+        enum: ['business','buyer','transporter','seller','admin','agent'],
         required: true
     },
     businessName: {type: String},
     contact: {type: String},
     address: {type: String},
-    identityType: {type: String, enum: ['aadhar','pan','license']},
+    identityType: {type: String, enum: ['aadhaar','pan','license']},
     identityNumber: {type: String},
     verified: {type: Boolean, default: false},
     createdAt: {type: Date, default: Date.now},

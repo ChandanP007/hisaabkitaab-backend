@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken'
+import User from "../models/model.user.js"
+import dotenv from 'dotenv'
+dotenv.config()
 
-const authenticate = (req,res,next) => {
+const authenticate = async(req,res,next) => {
     try{
         const token = req.header('Authorization')?.replace('Bearer ','')
 
@@ -9,11 +12,13 @@ const authenticate = (req,res,next) => {
         }
 
         const verified = jwt.verify(token, process.env.JWT_SECRET)
+        const user = await User.findById(verified.userId)
         if(!verified){
             return res.status(401).json({message: "Unauthorized"})
         }
 
-        req.userId = verified.userId
+        req.user = user
+        // console.log(req.user.role)
         next()
     }
     catch(error){

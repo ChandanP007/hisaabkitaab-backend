@@ -5,7 +5,8 @@ import cors from 'cors'
 import morgan from 'morgan'
 
 import connectDB from './config/db.connection.js'
-import userRoutes from './routes/routes.user.js'
+import userRoutes from './routes/route.user.js'
+import transactionRoutes from './routes/route.transaction.js'
 
 //env variables
 dotenv.config()
@@ -22,6 +23,7 @@ app.use(express.json({limit : '10kb'}))
 
 //routes
 app.use('/api/users', userRoutes)
+app.use('/api/transactions', transactionRoutes)
 
 
 connectDB(process.env.MONGO_URI)

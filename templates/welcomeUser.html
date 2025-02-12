@@ -1,0 +1,77 @@
+<!-- templates/welcomeEmail.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to HisaabKitaab</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333333;
+        text-align: center;
+      }
+      p {
+        color: #555555;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .welcome {
+        font-size: 20px;
+        font-weight: bold;
+        color: #007bff;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #888888;
+      }
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        font-size: 16px;
+        color: #ffffff;
+        background-color: #007bff;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to HisaabKitaab!</h1>
+      <p>Hello {{name}},</p>
+      <p>
+        We’re excited to have you on board! You have successfully registered on HisaabKitaab, your all-in-one platform for managing your finances effortlessly.
+      </p>
+      <p>
+        Start exploring our platform and take advantage of the powerful features we offer.
+      </p>
+      <p style="text-align: center;">
+        <a href="{{dashboard_link}}" class="btn">Go to Dashboard</a>
+      </p>
+      <p>If you have any questions, feel free to reach out to our support team.</p>
+      <div class="footer">
+        <p>Best regards,<br />The HisaabKitaab Team</p>
+      </div>
+    </div>
+  </body>
+</html>

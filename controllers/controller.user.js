@@ -1,4 +1,4 @@
-import User from '../models/models.user.js'
+import User from '../models/model.user.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
@@ -90,6 +90,68 @@ export const getProfile = async (req,res) => {
     try{
         const user = await User.findById(req.userId).select('-password')
         res.status(200).json(user)
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({message: "Internal server error"})
+    }
+}
+
+export const verifyOTP = async (req,res) => {
+    try{
+        const {email, otp} = req.body;
+        const user = await User.findOne({email, otp, otpExpires: {$gt: Date.now()}})
+        if(!user){
+            return res.status(400).json({message: "Invalid or expired OTP"})
+        }
+
+        user.verified = true
+        user.otp = undefined
+        user.otpExpires = undefined
+        await user.save()
+
+         //send onboarding email
+         await sendEmail(
+            email,
+            "Welcome to HisaabKitaab",
+            "welcomeUser.html",
+            {name: user.name, dashboard_link: "http://localhost:3000/dashboard"}
+        )
+
+        res.status(200).json({message: "Account verified successfully"})
+
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({message: "Internal server error"})
+    }
+}
+
+export const updateProfile = async (req,res) => {
+    try{
+        const userId = req.userId
+        const {contact, address, identityType, identityNumber} = req.body
+
+        //validate required fields
+        if(!contact || !address || !identityType || !identityNumber){
+            return res.status(400).json({message: "All fields are required"})
+        }
+
+        //find the user
+        const user = await User.findById(userId)
+        if(!user){
+            return res.status(400).json({message: "User not found"})
+        }
+
+        //update user
+        user.contact = contact || user.contact
+        user.address = address || user.address
+        user.identityType = identityType || user.identityType
+        user.identityNumber = identityNumber || user.identityNumber
+
+        await user.save()
+
+        res.status(200).json({message: "Profile updated successfully", user})
     }
     catch(error){
         console.log(error)
