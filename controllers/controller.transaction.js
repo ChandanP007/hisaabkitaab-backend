@@ -1,10 +1,8 @@
-import { upload } from "../services/s3Service.js";
 import User from "../models/model.user.js";
 import Transaction from "../models/model.transaction.js";
 import { sendEmail } from "../services/mailService.js";
 
 export const createTransaction = [
-  upload.array("attachments"),
   async (req, res) => {
     try {
       const { title, description, parties, dueDate } = req.body;
@@ -15,22 +13,14 @@ export const createTransaction = [
         return res.status(400).json({ message: "All fields are required" });
       }
 
-      //parse parties
-      // const parsedParties = JSON.parse(parties);
-
       //validate parties
       const users = await User.find({
         _id: { $in: parties.map((p) => p.user) },
       });
       if (users.length !== parties.length) {
-        return res.status(400).json({ message: "Invalid partie user(s)" });
+        return res.status(400).json({ message: "Invalid party user(s)" });
       }
 
-      //upload attachments
-      // const attachments = req.files.map((file) => ({
-      //   url: file.location,
-      //   name: file.originalname,
-      // }));
 
       //create the transaction
       const transaction = new Transaction({

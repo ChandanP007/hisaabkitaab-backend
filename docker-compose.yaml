@@ -1,0 +1,10 @@
+services: 
+  app: 
+    container_name : hisaabkitaab-server
+    build: .
+    ports: 
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: 
+      always

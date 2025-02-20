@@ -18,7 +18,9 @@ const UserSchema = new Schema({
     createdAt: {type: Date, default: Date.now},
     isActive: {type: Boolean, default: true},
     otp: {type: String},
-    otpExpires: {type: Date}
+    otpExpires: {type: Date},
+    passwordResetToken: {type: String},
+    passwordResetExpires: {type: Date}
 })
 
 export default model("User", UserSchema)
