@@ -235,6 +235,8 @@ export const resetPassword = async(req,res) => {
             metadata: { ip: req.ip}
         })
 
+        logger.info(`User ${email} reset their password from IP: ${req.ip}`)
+
         res.status(200).json({message: "Password reset successful"})
     }
     catch(error){
