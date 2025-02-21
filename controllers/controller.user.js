@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 import { generateOTP } from '../utils/generateOTP.js'
-import { sendEmail } from '../services/mailService.js'
+import { sendEmail } from '../services/service.mailling.js'
 import { AppError } from '../utils/errorHandler.js'
 import logger from '../utils/logger.js'
 

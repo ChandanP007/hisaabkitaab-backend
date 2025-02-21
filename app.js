@@ -7,7 +7,6 @@ import morgan from 'morgan'
 import connectDB from './config/db.connection.js'
 import userRoutes from './routes/route.user.js'
 import transactionRoutes from './routes/route.transaction.js'
-import logger from './utils/logger.js'
 
 //env variables
 dotenv.config()
@@ -21,6 +20,7 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json({limit : '10kb'}))
+express.urlencoded({ extended: true })
 
 
 //routes

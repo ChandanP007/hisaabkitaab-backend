@@ -1,6 +1,7 @@
 import { Schema, model } from "mongoose";
 
 const TransactionSchema = new Schema({
+    transactionId: {type: String, required: true},
     business: {
         type: Schema.Types.ObjectId,
         ref: "User",

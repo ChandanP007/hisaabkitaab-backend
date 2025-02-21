@@ -15,6 +15,8 @@ const UserSchema = new Schema({
     identityType: {type: String, enum: ['aadhaar','pan','license']},
     identityNumber: {type: String},
     verified: {type: Boolean, default: false},
+    membershipType: {type: String, enum: ['free','pro','enterprise'], default: 'free'},
+    membershipExpires: {type: Date, default: undefined},
     createdAt: {type: Date, default: Date.now},
     isActive: {type: Boolean, default: true},
     otp: {type: String},
