@@ -33,7 +33,7 @@ export const sendEmail = async (to, subject, templateName, replacements) => {
             from: 'HisaabKitaab <$process.env.SMTP_EMAIL>',
             to,
             subject,
-            html
+            html,
         }
 
         await transporter.sendMail(mailOptions)

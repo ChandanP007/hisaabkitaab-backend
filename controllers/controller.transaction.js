@@ -1,6 +1,7 @@
 import User from "../models/model.user.js";
 import Transaction from "../models/model.transaction.js";
 import { sendEmail } from "../services/mailService.js";
+import { generateReceiptPDF } from "../services/pdfGenerator.js";
 
 export const createTransaction = [
   async (req, res) => {
@@ -34,6 +35,7 @@ export const createTransaction = [
       });
 
       await transaction.save();
+      await generateReceiptPDF(transaction, `../receipts/${transaction._id}.pdf`);
 
       //notify all the parties
       const business = await User.findById(businessId);
