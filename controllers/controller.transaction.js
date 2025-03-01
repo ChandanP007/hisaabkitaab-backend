@@ -101,7 +101,8 @@ export const uploadFilesToS3 = async (req, res, next) => {
           file.buffer,
           req.transactionId + "_" + file.originalname,
           file.mimetype,
-          userId
+          userId,
+          "transaction"
         );
         return result.Location;
       })

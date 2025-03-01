@@ -13,13 +13,13 @@ const s3Client = new S3Client({
 })
 
 //Upload file to S3 bucket
-export const uploadToBucket = async (fileBuffer, fileName, fileType, userId) => {
+export const uploadToBucket = async (fileBuffer, fileName, fileType, userId, location) => {
     try{
         const upload = new Upload({
             client: s3Client,
             params: {
                 Bucket: process.env.AWS_BUCKET_NAME,
-                Key: `user-${userId}/transactions/${fileName}`,
+                Key: location == "transaction" ? `user-${userId}/transactions/${fileName}` : `user-${userId}/${fileName}` ,
                 Body: fileBuffer,
                 ContentType: fileType,
             },

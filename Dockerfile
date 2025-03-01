@@ -1,20 +1,20 @@
-# Use Node.js LTS as the base image
-FROM node:22
+# Use the latest LTS Node.js as the base image
+FROM node:20
 
-# Set the working directory in the container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the package.json file into the container at /app
-COPY package*.json ./
+# Copy package.json and package-lock.json before copying the rest
+COPY package.json package-lock.json ./
 
-# Install all the dependencies
-RUN npm install
+# Install only production dependencies
+RUN npm install --only=production
 
-# Copy the rest of the application code into the container
+# Copy the rest of the application files
 COPY . .
 
-# Expose the port the app runs in
+# Expose the application port
 EXPOSE 5000
 
-# Serve the app
+# Start the application
 CMD ["npm", "start"]

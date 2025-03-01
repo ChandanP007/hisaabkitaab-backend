@@ -5,19 +5,20 @@ import jwt from 'jsonwebtoken'
 
 import { generateOTP } from '../utils/generateOTP.js'
 import { sendEmail } from '../services/service.mailling.js'
+import { uploadToBucket } from '../services/service.s3.js'
 import { AppError } from '../utils/errorHandler.js'
 import logger from '../utils/logger.js'
 
 export const registerUser = async (req,res) => {
     try{
-        const {name, email, password, role, businessName} = req.body
+        const {name, email, password} = req.body
 
         //validate required fields
-        if(!name || !email || !password || !role){
+        if(!name || !email || !password ){
             return res.status(400).json({message: "All fields are required"})
         }
 
-        //check if user already exists
+        // check if user already exists
         const userExists = await User.findOne({email});
         if(userExists){
             return res.status(400).json({message: "User already exists"})
@@ -36,8 +37,6 @@ export const registerUser = async (req,res) => {
             name,
             email,
             password: hashedPassword,
-            role,
-            businessName,
             otp,
             otpExpires
         })
@@ -56,6 +55,41 @@ export const registerUser = async (req,res) => {
         res.status(201).json({message: "User registered successfully", userId : user._id})
 
 
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({message: "Internal server error"})
+    }
+}
+
+export const resendOtp = async (req,res) => {
+    try{
+        const {name, email} = req.body
+
+        //check if user exists
+        const user = await User.findOne({ email })
+        if(!user){
+            return res.status(400).json({message: "User does not exist"})
+        }
+
+        //generate otp
+        const otp = generateOTP();
+        const otpExpires = new Date(Date.now() + 10*60*1000) //10 minutes
+
+        //update user
+        user.otp = otp
+        user.otpExpires = otpExpires
+        await user.save()
+
+        //send otp email
+        await sendEmail(
+            email,
+            "OTP for account verification",
+            "otpEmail.html",
+            {name,otp}
+        )
+
+        res.status(200).json({message: "OTP sent successfully"})
     }
     catch(error){
         console.log(error)
@@ -97,7 +131,7 @@ export const loginUser = async (req,res) => {
 
 export const getProfile = async (req,res) => {
     try{
-        const user = await User.findById(req.userId).select('-password')
+        const user = await User.findById(req.user._id).select('-password')
         res.status(200).json(user)
     }
     catch(error){
@@ -115,21 +149,23 @@ export const verifyOTP = async (req,res) => {
             return res.status(400).json({message: "Invalid or expired OTP"})
         }
 
-        user.verified = true
+        user.emailVerified = true
         user.otp = undefined
         user.otpExpires = undefined
         await user.save()
 
          //send onboarding email
-         await sendEmail(
-            email,
-            "Welcome to HisaabKitaab",
-            "welcomeUser.html",
-            {name: user.name, dashboard_link: "http://localhost:3000/dashboard"}
-        )
+        //  await sendEmail(
+        //     email,
+        //     "Welcome to HisaabKitaab",
+        //     "welcomeUser.html",
+        //     {name: user.name, dashboard_link: "http://localhost:3000/dashboard"}
+        // )
         logger.info(`User verified their profile: ${email}, IP: ${req.ip}`)
 
-        res.status(200).json({message: "Account verified successfully"})
+        const token = jwt.sign({userId : user._id}, process.env.JWT_SECRET, {expiresIn: '1d'})
+
+        res.status(200).json({message: "Account verified successfully",token})
 
     }
     catch(error){
@@ -140,11 +176,66 @@ export const verifyOTP = async (req,res) => {
 
 export const updateProfile = async (req,res) => {
     try{
-        const userId = req.userId
-        const {contact, address, identityType, identityNumber} = req.body
+        const userId = req.user._id
+        const {businessName, gstNumber, address, contact, isWhatsapp, idType, idNumber} = JSON.parse(req.body.jsonData)
 
         //validate required fields
-        if(!contact || !address || !identityType || !identityNumber){
+        if(!businessName || !gstNumber || !address || !contact || !idType || !idNumber){
+            return res.status(400).json({message: "All fields are required"})
+        }
+        const user = await User.findById(userId)
+
+        //find the user
+        if(!user){
+            return res.status(400).json({message: "User not found"})
+        }
+
+        //uploading the identity document to s3 bucket
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded or incorrect field name" });
+        }
+        
+        const identityDocument = req.file.buffer
+        const fileName = req.file.originalname
+        const fileType = req.file.mimetype
+        const location = "identity"
+        const result = await uploadToBucket(identityDocument, fileName, fileType, userId, location)
+        if(!result){
+            return res.status(500).json({message: "Error uploading identity document"})
+        }
+        const fileUrl = result.Location
+
+
+        //update user
+        user.businessName = businessName 
+        user.gstNumber = gstNumber
+        user.address = address || user.address
+        user.contact = contact || user.contact
+        user.isWhatsapp = isWhatsapp || user.isWhatsapp
+        user.identityType = idType || user.identityType
+        user.identityNumber = idNumber || user.identityNumber
+        user.identityAttachment = fileUrl
+
+
+        await user.save()
+
+        logger.info(`User updated their profile: ${user.email}, IP: ${req.ip}`)
+
+        res.status(200).json({message: "Profile updated successfully", user, fileUrl : fileUrl}) 
+    }
+    catch(error){
+        console.error("Update Profile Error:", error);
+        res.status(500).json({message: "Internal server error"})
+    }
+}
+
+export const updateDocument = async (req,res) => {
+    try{
+        const userId = req.user._id
+        const {identityType, identityNumber} = req.body
+
+        //validate required fields
+        if(!identityType || !identityNumber){
             return res.status(400).json({message: "All fields are required"})
         }
 
@@ -155,16 +246,14 @@ export const updateProfile = async (req,res) => {
         }
 
         //update user
-        user.contact = contact || user.contact
-        user.address = address || user.address
-        user.identityType = identityType || user.identityType
-        user.identityNumber = identityNumber || user.identityNumber
+        user.identityType = identityType
+        user.identityNumber = identityNumber
 
         await user.save()
 
-        logger.info(`User updated their profile: ${user.email}, IP: ${req.ip}`)
+        logger.info(`User updated their document: ${user.email}, IP: ${req.ip}`)
 
-        res.status(200).json({message: "Profile updated successfully", user})
+        res.status(200).json({message: "Document updated successfully", user})
     }
     catch(error){
         console.log(error)
@@ -267,3 +356,5 @@ export const deleteProfile = async(req,res) => {
         res.status(500).json({message: "Internal server error"})
     }
 }
+
+
