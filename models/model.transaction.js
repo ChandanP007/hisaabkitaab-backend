@@ -1,43 +1,43 @@
-import { Schema, model } from "mongoose";
+import {Schema, model} from 'mongoose';
 
-const TransactionSchema = new Schema({
-    transactionId: {type: String, required: true},
-    business: {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
-    title: {type: String, required: true},
-    description: {type: String},
-    parties: [
-        {
-            user: {
-                type: Schema.Types.ObjectId,
-                ref: "User",
-                required: true
-            },
-            role: {
-                type: String,
-                enum: ['buyer', 'seller', 'transporter', 'agent'],
-                required: true
-            },
-            verified: {type: Boolean, default: false},
-        }
-    ],
-    attachments: [
-        {
-            url: {type: String, required: true},
-            name: {type: String, required: true}
-        }
-    ],
+
+  const transactionSchema = new Schema({
+    transactionNumber: { type: String, required: true, unique: true },
+    agent: { type: Schema.Types.ObjectId, ref: "Agent", required: true },
+    title: { type: String, required: true },
+    description: { type: String },
+    amount: { type: Number, required: true },
     status: {
-        type: String,
-        enum: ['draft','pending-verification','verified','completed','cancelled'],
-        default: 'draft'
+      type: String,
+      enum: [
+        "draft",
+        "initiated",
+        "in_progress",
+        "pending",
+        "completed",
+        "cancelled"
+      ],
+      default: "draft",
     },
-    dueDate: {type: Date},
-    createdAt: {type: Date, default: Date.now},
-    updatedAt: {type: Date, default: Date.now}
-})
+    startDate: { type: Date },
+    dueDate: { type: Date },
+    completedAt: { type: Date },
+    parties: [{
+      business: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
+      role: { type: String, required: true},
+      status: {
+        type: String,
+        enum: ["pending", "notified", "documents_uploaded", "verified", "rejected"],
+        default: "pending",
+      },
+      notes: { type: String },
+    }],
+    documents: [{ type: Schema.Types.ObjectId, ref: "Document" }],
+    history: [{ type: Schema.Types.ObjectId, ref: "TransactionHistory" }],
+    verification: [{ type: Schema.Types.ObjectId, ref: "User"}],
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date },
+  });
 
-export default model("Transaction", TransactionSchema)
+
+export const Transaction = model("Transaction", transactionSchema);

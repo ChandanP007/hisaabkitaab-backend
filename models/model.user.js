@@ -1,34 +1,73 @@
-import {Schema, model} from 'mongoose'
+import { Schema, model } from "mongoose";
 
-const UserSchema = new Schema({
-    name: {type: String, required: true},
-    email: {type: String, required: true, unique: true},
-    password: {type: String, required: true},
-    role: {
-        type: String,
-        enum: ['user','admin'],
-        default: 'user'
-    },
-    businessName: {type: String},
-    gstNumber: {type: String},
-    address: {type: String},
-    contact: {type: String},
-    isWhatsapp: {type: Boolean, default: false},
-    identityType: {type: String, enum: ['aadhaar','pan','license']},
-    identityNumber: {type: String},
-    identityUrl: {type: String},
-    identityVerified: {type: Boolean, default: false},
-    identityAttachment: {type: String},
-    identityVerified: {type: Boolean, default: false},
-    emailVerified: {type: Boolean, default: false},
-    membershipType: {type: String, enum: ['free','pro','enterprise'], default: 'free'},
-    membershipExpires: {type: Date, default: undefined},
-    createdAt: {type: Date, default: Date.now},
-    isActive: {type: Boolean, default: true},
-    otp: {type: String},
-    otpExpires: {type: Date},
-    passwordResetToken: {type: String},
-    passwordResetExpires: {type: Date}
-})
+const userSchema = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  phone: { type: String },
+  role: {
+    type: String,
+    enum: ["agent", "business"],
+    default: "business",
+    required: true,
+  },
+  gstNumber: { type: String },
+  address: { type: String },
+  isActive: { type: Boolean, default: true },
+  emailVerified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date },
+  otp: { type: String },
+  otpExpires: { type: Date },
+  passwordResetToken: { type: String },
+  passwordResetExpires: { type: Date },
+  membershipType: { type: String, enum: ["free", "premium"], default: "free" },
+  profileImage: { type: String },
+});
 
-export default model("User", UserSchema)
+const businessProfileSchema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  businessName: { type: String, required: true },
+  gstNumber: { type: String, required: true },
+  panNumber: { type: String, required: true },
+  address: { type: String},
+  isVerified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date },
+});
+
+const agentProfileSchema = new Schema({
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  agentName: { type: String, required: true },
+  panNumber: { type: String, required: true },
+  rating: { type: Number, default: 0 },
+  isVerified: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date },
+});
+
+const businessRelationshipSchema = new Schema({
+  primaryBusiness: {
+    type: Schema.Types.ObjectId,
+    ref: "BusinessProfile",
+    required: true,
+  },
+  relatedBusiness: {
+    type: Schema.Types.ObjectId,
+    ref: "BusinessProfile",
+    required: true,
+  },
+  relationshipType: { type: String },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date },
+});
+
+
+
+
+
+export const User = model("User", userSchema);
+export const BusinessProfile = model("BusinessProfile", businessProfileSchema);
+export const AgentProfile = model("AgentProfile", agentProfileSchema);
+export const BusinessRelationship = model("BusinessRelationship", businessRelationshipSchema);

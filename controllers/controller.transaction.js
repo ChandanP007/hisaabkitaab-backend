@@ -1,12 +1,13 @@
-import User from "../models/model.user.js";
-import Transaction from "../models/model.transaction.js";
+import {User} from "../models/model.user.js";
+import {Transaction} from "../models/model.transaction.js";
 import { sendEmail } from "../services/service.mailling.js";
-import { generateReceiptPDF } from "../services/service.generatepdf.js";
 import { deleteFromBucket, uploadToBucket } from "../services/service.s3.js";
 
 export const createTransaction = async (req, res) => {
   try {
-    const { title, description, parties, dueDate, notify } = req.body.jsonData ? JSON.parse(req.body.jsonData) : req.body;
+    const { title, description, parties, dueDate, notify } = req.body.jsonData
+      ? JSON.parse(req.body.jsonData)
+      : req.body;
     const businessId = req.user._id;
 
     //validate required fields
@@ -32,7 +33,7 @@ export const createTransaction = async (req, res) => {
       title,
       description,
       parties,
-      attachments : attachments.map((file) => ({
+      attachments: attachments.map((file) => ({
         url: file,
         name: file.split("/").pop(),
       })),
@@ -75,6 +76,65 @@ export const createTransaction = async (req, res) => {
   }
 };
 
+export const createNewTransaction = async (req, res) => {
+  try {
+    const { title, description, parties, deadline } = req.body.formData
+      ? JSON.parse(req.body.formData)
+      : req.body;
+    const files = req.files;
+
+    //validate required fields
+    if (!title || !parties || !deadline) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    //validate parties
+    // const users = await User.find({
+    //   _id: { $in: parties.map((p) => p.user) },
+    // });
+
+    // if (users.length !== parties.length) {
+    //   return res.status(400).json({ message: "Invalid party user(s)" });
+    // }
+
+    //get the parties
+    const partiesInvolved = JSON.parse(parties).map((party) => ({
+      user: party,
+      acknowledged: false,
+    }));
+
+    //get the attachments
+    const attachments = files.map((file) => ({
+      url: file,
+      title: file.split("/").pop(),
+    }));
+
+    //create the transaction
+    const transaction = new Transaction({
+      transactionId: req.transactionId,
+      createdBy: req.user._id,
+      title,
+      description,
+      parties: partiesInvolved,
+      attachments,
+      dueDate: deadline,
+      status: "pending",
+    });
+
+    await transaction.save();
+
+    res
+      .status(200)
+      .json({
+        message: "Transaction created successfully",
+        transaction: transaction,
+      });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: `Server Responded with Error : 500` });
+  }
+};
+
 export const uploadFilesToS3 = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -87,12 +147,12 @@ export const uploadFilesToS3 = async (req, res, next) => {
     //check if user has enough capacity to upload files
     const user = await User.findById(userId);
 
-    const maxFiles = user.membershipType === "pro" ? 10 : 2;
-    if (files.length > maxFiles) {
-      return res.status(400).json({
-        message: `You can upload upto ${maxFiles} files, Upgrade to increase the capacity`,
-      });
-    }
+    // const maxFiles = user.membershipType === "pro" ? 10 : 2;
+    // if (files.length > maxFiles) {
+    //   return res.status(400).json({
+    //     message: `You can upload upto ${maxFiles} files, Upgrade to increase the capacity`,
+    //   });
+    // }
 
     //upload files to bucket
     const fileUrls = await Promise.all(
@@ -113,43 +173,48 @@ export const uploadFilesToS3 = async (req, res, next) => {
     next();
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ message: "Internal server error hai" });
   }
 };
 
 export const deleteTransaction = async (req, res) => {
-   try{
-        const {transactionId} = req.params
-        const userId = req.user._id
+  try {
+    const { transactionId } = req.params;
+    const userId = req.user._id;
 
-        // check if transaction exists
-        if(!transactionId){
-            return res.status(400).json({message: "Transaction ID is required"})
-        }
+    // check if transaction exists
+    if (!transactionId) {
+      return res.status(400).json({ message: "Transaction ID is required" });
+    }
 
-        // check if transaction belongs to the business
-        const transaction = await Transaction.findOne({transactionId, business: userId})
-        if(!transaction){
-            return res.status(400).json({message: "Transaction not found"})
-        }
+    // check if transaction belongs to the business
+    const transaction = await Transaction.findOne({
+      transactionId,
+      business: userId,
+    });
+    if (!transaction) {
+      return res.status(400).json({ message: "Transaction not found" });
+    }
 
-        // delete the transaction from db
-        await transaction.deleteOne()
+    // delete the transaction from db
+    await transaction.deleteOne();
 
-        //delete the files from the bucket 
-        await Promise.all(transaction.attachments.map(async (attachment) => {
-            await deleteFromBucket(attachment.name, userId)
-        }))
+    //delete the files from the bucket
+    await Promise.all(
+      transaction.attachments.map(async (attachment) => {
+        await deleteFromBucket(attachment.name, userId);
+      })
+    );
 
-        logger.info(`Transaction ${transactionId} deleted by ${userId} from ${req.ip}`)
+    logger.info(
+      `Transaction ${transactionId} deleted by ${userId} from ${req.ip}`
+    );
 
-        res.status(200).json({message: "Transaction deleted successfully"})
-
-   }
-   catch(error){
-        console.log(error)
-        res.status(500).json({message: "Internal server error"})
-   }
+    res.status(200).json({ message: "Transaction deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const getTransactions = async (req, res) => {
@@ -161,4 +226,4 @@ export const getTransactions = async (req, res) => {
     console.log(error);
     res.status(500).json({ message: "Internal server error" });
   }
-}
+};

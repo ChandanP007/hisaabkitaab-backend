@@ -2,6 +2,7 @@ import { Router } from "express";
 import authenticate from "../middlewares/middleware.auth.js";
 import checkRole from "../middlewares/middleware.role.js";
 import {
+  createNewTransaction,
   createTransaction,
   deleteTransaction,
   getTransactions,
@@ -30,6 +31,15 @@ router.post(
   upload.array("files", 5),
   uploadFilesToS3
 );
+
+router.post(
+  "/new-transaction",
+  authenticate,
+  generateTransactionId,
+  upload.array("files"),
+  uploadFilesToS3,
+  createNewTransaction
+)
 
 
 router.delete(

@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken'
-import User from "../models/model.user.js"
+import {User} from "../models/model.user.js"
 import dotenv from 'dotenv'
 dotenv.config()
 
 const authenticate = async(req,res,next) => {
     try{
-        const token = req.header('Authorization')?.replace('Bearer ','')
 
+        const token = req.cookies.token || req.headers.authorization.split(" ")[1]
+        console.log("Token "+token);
         if(!token){
             return res.status(401).json({message: "Unauthorized"})
         }
