@@ -56,7 +56,6 @@ export const createBusinessProfile = async (req,res) => {
 
 export const getProfile = async (req, res) => {
     try {
-        // Ensure `req.user` is present (Middleware should handle auth)
         if (!req.user || !req.user._id) {
             return res.status(401).json({ message: "Unauthorized: No user ID provided" });
         }
@@ -70,15 +69,15 @@ export const getProfile = async (req, res) => {
         }
 
         //Fetch user profile
-        const profile = await AgentProfile.findOne({user: user._id}) || await BusinessProfile.findOne({user: user._id})
-
-        if(!profile){
-            return res.status(404).json({message: "Profile not found"})
+        let profile = null
+        if(user.role === "business"){
+            profile = BusinessProfile.findOne({user: user._id})
+        }
+        else if(user.role === "agent"){
+            profile = AgentProfile.findOne({user: user._id})
         }
 
-
-
-
+        // Send response
         res.status(200).json(user, profile);
     } catch (error) {
         console.error("Error fetching profile:", error);
