@@ -71,10 +71,26 @@ export const getProfile = async (req, res) => {
         // Fetch user profile
         let profile = null;
         if (user.role === "business") {
-            profile = await BusinessProfile.findOne({ user: user._id });
+            const data = await BusinessProfile.findOne({ user: user._id });
+            if (!data) {
+                return res.status(404).json({ message: "Profile not found" });
+            }
+            profile = {
+                name: data.businessName,
+                pan: data.panNumber,
+                gst: data.gstNumber,
+                address: data.address,
+            }
         } else if (user.role === "agent") {
-            profile = await AgentProfile.findOne({ user: user._id });
+            const data = await AgentProfile.findOne({ user: user._id });
+            if (!data) {
+                return res.status(404).json({ message: "Profile not found" });
+            }
+            profile = {
+                name: data.agentName,
+                pan: data.panNumber
         }
+    }
 
         // Send response
         res.status(200).json({ user, profile });
