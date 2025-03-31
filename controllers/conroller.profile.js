@@ -78,7 +78,7 @@ export const getProfile = async (req, res) => {
             profile = {
                 name: data.businessName,
                 pan: data.panNumber,
-                gst: data.gstNumber,
+                id: data.gstNumber,
                 address: data.address,
             }
         } else if (user.role === "agent") {
@@ -88,7 +88,7 @@ export const getProfile = async (req, res) => {
             }
             profile = {
                 name: data.agentName,
-                pan: data.panNumber
+                id: data.panNumber
         }
     }
 
