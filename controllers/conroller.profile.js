@@ -61,24 +61,24 @@ export const getProfile = async (req, res) => {
         }
 
         // Fetch user from database
-        const user = await User.findById(req.user._id).select('-password');
+        const user = await User.findById(req.user._id).select("-password");
 
         // Handle case where user is not found
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        //Fetch user profile
-        let profile = null
-        if(user.role === "business"){
-            profile = BusinessProfile.findOne({user: user._id})
-        }
-        else if(user.role === "agent"){
-            profile = AgentProfile.findOne({user: user._id})
+        // Fetch user profile
+        let profile = null;
+        if (user.role === "business") {
+            profile = await BusinessProfile.findOne({ user: user._id });
+        } else if (user.role === "agent") {
+            profile = await AgentProfile.findOne({ user: user._id });
         }
 
         // Send response
-        res.status(200).json(user, profile);
+        res.status(200).json({ user, profile });
+
     } catch (error) {
         console.error("Error fetching profile:", error);
 
@@ -90,6 +90,7 @@ export const getProfile = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 export const deleteProfile = async(req,res) => {
     try{
