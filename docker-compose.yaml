@@ -8,3 +8,5 @@ services:
       - .env
     restart: 
       always
+    volumes: 
+      - ./logs:/app/logs
