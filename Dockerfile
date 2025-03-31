@@ -16,11 +16,5 @@ COPY . .
 # Expose the application port
 EXPOSE 5000
 
-<<<<<<< HEAD
-
 # Serve the app
 CMD ["npm", "start"]
-=======
-# Start the application
-CMD ["npm", "start"]
->>>>>>> feature/transactions
