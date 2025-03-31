@@ -1,4 +1,4 @@
-import { User } from "../models/model.user.js"
+import { BusinessProfile, User } from "../models/model.user.js"
 import { AgentProfile } from "../models/model.user.js"
 
 export const createBusinessProfile = async (req,res) => {
@@ -69,7 +69,17 @@ export const getProfile = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        res.status(200).json(user);
+        //Fetch user profile
+        const profile = await AgentProfile.findOne({user: user._id}) || await BusinessProfile.findOne({user: user._id})
+
+        if(!profile){
+            return res.status(404).json({message: "Profile not found"})
+        }
+
+
+
+
+        res.status(200).json(user, profile);
     } catch (error) {
         console.error("Error fetching profile:", error);
 
