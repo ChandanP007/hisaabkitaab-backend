@@ -49,15 +49,14 @@ const agentProfileSchema = new Schema({
 const businessRelationshipSchema = new Schema({
   primaryBusiness: {
     type: Schema.Types.ObjectId,
-    ref: "BusinessProfile",
+    ref: "BusinessProfile" || "AgentProfile",
     required: true,
   },
   relatedBusiness: {
     type: Schema.Types.ObjectId,
-    ref: "BusinessProfile",
+    ref: "BusinessProfile" || "AgentProfile",
     required: true,
   },
-  relationshipType: { type: String },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date },

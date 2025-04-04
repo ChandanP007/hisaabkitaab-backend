@@ -3,7 +3,7 @@ import { loginUser, registerUser, verifyOTP, forgotPassword, resetPassword, rese
 import authenticate from "../middlewares/middleware.auth.js";
 import { apiLimiter, forgotPasswordLimiter } from "../middlewares/middleware.rateLimit.js";
 import { upload } from "../middlewares/middleware.multer.js";
-import { createBusinessProfile, getProfile, updateProfile } from "../controllers/conroller.profile.js";
+import { addClientRelation, createBusinessProfile, getProfile, searchProfileById, updateProfile } from "../controllers/conroller.profile.js";
 const router = Router();
 router.use(apiLimiter)
 
@@ -22,7 +22,8 @@ router.post('/reset-password/:token',resetPassword)
 router.post('/new-profile', authenticate, upload.single('file'), createBusinessProfile)
 router.get('/profile', authenticate, getProfile)
 router.put('/profile', authenticate, upload.single('file'), updateProfile)
-
+router.post('/search/:id', searchProfileById);
+router.post('/add-relationship/:id', authenticate, addClientRelation);
 
 
 export default router;

@@ -1,4 +1,4 @@
-import { BusinessProfile, User } from "../models/model.user.js"
+import { BusinessProfile, BusinessRelationship, User } from "../models/model.user.js"
 import { AgentProfile } from "../models/model.user.js"
 
 export const createBusinessProfile = async (req,res) => {
@@ -106,6 +106,65 @@ export const getProfile = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const searchProfileById = async (req, res) => {
+    try{
+        const {id} = req.params
+        console.log(id)
+
+        //find the agent/business profile with id 
+        const agentProfile = await AgentProfile.findOne({panNumber: id})
+        const businessProfile = await BusinessProfile.findOne({gstNumber: id})
+
+        if(agentProfile){
+            return res.status(200).json({profile: agentProfile, type: "agent"})
+        }
+        if(businessProfile){
+            return res.status(200).json({profile: businessProfile, type: "business"})
+        }
+        return res.status(404).json({message: "Profile not found"})
+
+
+    }catch(error){
+        console.error("Error fetching profile:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const addClientRelation = async (req, res) => {
+    try {
+        const { clientId } = req.body;
+        const userId = req.user._id;
+
+        // Check if the client ID is valid
+        if (!clientId || clientId === userId) {
+            return res.status(400).json({ message: "Client ID is required" });
+        }
+
+        // check if the client ID is already in the user's client list
+        const relationExist = await BusinessRelationship.findOne({
+            primaryBusiness: userId,
+            relatedBusiness: clientId
+        });
+
+        if (relationExist) { 
+            return res.status(400).json({ message: "Client relation already exists" });
+        }
+
+        // Create a new client relation
+        const newRelation = new BusinessRelationship({
+            primaryBusiness: userId,
+            relatedBusiness: clientId
+        });
+        await newRelation.save();
+  
+
+        res.status(200).json({ message: "Client relation added successfully", newRelation });
+    } catch (error) {
+        console.error("Error adding client relation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
 
 
 export const deleteProfile = async(req,res) => {
