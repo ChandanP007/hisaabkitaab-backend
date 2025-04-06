@@ -133,13 +133,17 @@ export const searchProfileById = async (req, res) => {
 
 export const addClientRelation = async (req, res) => {
     try {
-        const { clientId } = req.body;
+        const { clientId } = req.params;
         const userId = req.user._id;
 
+        console.log(clientId, userId)
+
         // Check if the client ID is valid
-        if (!clientId || clientId === userId) {
+        if (!clientId || (clientId === userId)) {
             return res.status(400).json({ message: "Client ID is required" });
         }
+
+
 
         // check if the client ID is already in the user's client list
         const relationExist = await BusinessRelationship.findOne({
@@ -162,6 +166,25 @@ export const addClientRelation = async (req, res) => {
         res.status(200).json({ message: "Client relation added successfully", newRelation });
     } catch (error) {
         console.error("Error adding client relation:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getAllClientRelations = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        // Find all client relations for the user
+        const relations = await BusinessRelationship.find({
+            $or: [
+                { primaryBusiness: userId },
+                { relatedBusiness: userId }
+            ]
+        }).populate("primaryBusiness relatedBusiness");
+
+        res.status(200).json({ relations });
+    } catch (error) {
+        console.error("Error fetching client relations:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }
