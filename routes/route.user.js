@@ -23,7 +23,7 @@ router.post('/new-profile', authenticate, upload.single('file'), createBusinessP
 router.get('/profile', authenticate, getProfile)
 router.put('/profile', authenticate, upload.single('file'), updateProfile)
 router.post('/search/:id', searchProfileById);
-router.post('/add-relationship/:clientId', authenticate, addClientRelation);
+router.post('/add-relationship', authenticate, addClientRelation);
 router.get('/get-clients', authenticate, getAllClientRelations)
 
 export default router;
