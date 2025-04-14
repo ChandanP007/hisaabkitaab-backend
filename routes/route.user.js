@@ -3,10 +3,11 @@ import { loginUser, registerUser, verifyOTP, forgotPassword, resetPassword, rese
 import authenticate from "../middlewares/middleware.auth.js";
 import { apiLimiter, forgotPasswordLimiter } from "../middlewares/middleware.rateLimit.js";
 import { upload } from "../middlewares/middleware.multer.js";
-import { addClientRelation, createBusinessProfile, getAllClientRelations, getProfile, searchProfileById, updateProfile } from "../controllers/conroller.profile.js";
+import {  createBusinessProfile, getProfile, searchProfileById, updateProfile } from "../controllers/controller.profile.js";
+import { addClientRelation, getAllClientRelations } from "../controllers/controller.relation.js";
+import { createCategory, deleteCategoryById, getCategories, partialUpdateCategory } from "../controllers/controller.category.js";
 const router = Router();
 router.use(apiLimiter)
-
 
 
 //user routes
@@ -23,7 +24,16 @@ router.post('/new-profile', authenticate, upload.single('file'), createBusinessP
 router.get('/profile', authenticate, getProfile)
 router.put('/profile', authenticate, upload.single('file'), updateProfile)
 router.post('/search/:id', searchProfileById);
+
+//clients and relation
 router.post('/add-relationship', authenticate, addClientRelation);
 router.get('/get-clients', authenticate, getAllClientRelations)
+
+
+//category routes
+router.get('/categories', authenticate, getCategories)
+router.post('/categories', authenticate, createCategory)
+router.post('/categories/update', authenticate, partialUpdateCategory)
+router.delete('/categories/:id', authenticate, deleteCategoryById)
 
 export default router;

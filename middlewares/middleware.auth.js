@@ -7,7 +7,7 @@ const authenticate = async(req,res,next) => {
     try{
 
         const token = (req.headers.authorization ? req.headers.authorization.split(" ")[1] : null) 
-        || req.session?.token;
+        || req.session?.token || req.body.token;
 
         // console.log("Headers "+req.headers.authorization);
 
