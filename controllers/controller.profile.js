@@ -71,32 +71,9 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Fetch user profile
-    let profile = null;
-    if (user.role === "business") {
-      const data = await BusinessProfile.findOne({ user: user._id });
-      if (!data) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      profile = {
-        name: data.businessName,
-        pan: data.panNumber,
-        id: data.gstNumber,
-        address: data.address,
-      };
-    } else if (user.role === "agent") {
-      const data = await AgentProfile.findOne({ user: user._id });
-      if (!data) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      profile = {
-        name: data.agentName,
-        id: data.panNumber,
-      };
-    }
 
     // Send response
-    res.status(200).json({ user, profile });
+    res.status(200).json({ user });
   } catch (error) {
     console.error("Error fetching profile:", error);
 

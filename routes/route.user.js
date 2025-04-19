@@ -36,4 +36,7 @@ router.post('/categories', authenticate, createCategory)
 router.post('/categories/update', authenticate, partialUpdateCategory)
 router.delete('/categories/:id', authenticate, deleteCategoryById)
 
+//transaction routes
+
+
 export default router;
