@@ -5,11 +5,8 @@ dotenv.config()
 
 const authenticate = async(req,res,next) => {
     try{
-
-        const token = (req.headers.authorization ? req.headers.authorization.split(" ")[1] : null) 
-        || req.session?.token || req.body.token;
-
-        // console.log("Headers "+req.headers.authorization);
+        const authHeader = req.headers['authorization']
+        const token = req.cookies.token || authHeader && authHeader.split(' ')[1] // Bearer token;
 
         // console.log("Token "+token);
         if(!token){
@@ -22,7 +19,12 @@ const authenticate = async(req,res,next) => {
             return res.status(401).json({message: "Unauthorized"})
         }
 
+        if(req.path === '/validate-token'){
+            return res.status(200).json({message: "Token is valid"})
+        }
+
         req.user = user
+        
         // console.log(req.user.role)
         next()
     }

@@ -60,41 +60,6 @@ export const createCategory = async(req,res) => {
     }
 }
 
-export const partialUpdateCategory = async (req, res) => {
-    try {
-        const { name, categoryClients } = req.body;
-        const userId = req.user._id;
-
-        //Check if category exists
-        const categoryExists = await Category.findOne({ categoryId: `catg-${name}-${userId}` });
-
-        if (!categoryExists) {
-            return res.status(404).json({ message: "Category not found" });
-        }
-
-        //Update the category
-        const updatedCategory = await Category.findOneAndUpdate(
-            { categoryId: `catg-${name}-${userId}` },
-            { $set: { clients: categoryClients } },
-            { new: true }
-        );
-
-        //Check if the category was updated successfully
-        if (!updatedCategory) {
-            return res.status(400).json({ message: "Category update failed" });
-        }
-
-        res.status(200).json({
-            message: "Category updated successfully",
-            updatedCategory
-        });
-
-    } catch (error) {
-        console.error("Error updating category:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-}
-
 export const deleteCategoryById = async (req, res) => {
     try{
         const { id } = req.params;

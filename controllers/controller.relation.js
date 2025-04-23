@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { AgentProfile, BusinessProfile, BusinessRelationship, User } from "../models/model.user.js";
+import { BusinessRelationship, User } from "../models/model.user.js";
 
 
 export const addClientRelation = async (req, res) => {

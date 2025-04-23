@@ -76,6 +76,15 @@ export const verifyOTP = async (req,res) => {
         user.otpExpires = undefined
         await user.save()
 
+        //send a welcome email
+        await sendEmail(
+            email,
+            "Welcome to HisaabKitaab",
+            "welcomeEmail.html",
+            {name: user.name}
+        )
+
+
         
         logger.info(`User verified their profile: ${email}, IP: ${req.ip}`)
 
@@ -198,7 +207,7 @@ export const resetPassword = async(req,res) => {
             metadata: { ip: req.ip}
         })
 
-        logger.info(`User ${email} reset their password from IP: ${req.ip}`)
+        logger.info(`User ${user.email} reset their password from IP: ${req.ip}`)
 
         res.status(200).json({message: "Password reset successful"})
     }
@@ -229,7 +238,7 @@ export const forgotPassword = async (req,res) => {
             email,
             "Password Reset Request",
             "passwordResetEmail.html",
-            {name: user.name, reset_link: `http://localhost:5000/reset-password/${resetToken}`}
+            {name: user.name, reset_link: `http://localhost:3000/forgot-password/${resetToken}`}
         )
 
         res.status(200).json({message: "Password reset link sent to your email", reset_link : `http://localhost:5000/reset-password/${resetToken}`})
