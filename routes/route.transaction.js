@@ -4,7 +4,6 @@ import checkRole from "../middlewares/middleware.role.js";
 import {
   createNewTransaction,
   createTransaction,
-  deleteTransaction,
   getTransactions,
   uploadFilesToS3,
 } from "../controllers/controller.transaction.js";
@@ -42,12 +41,7 @@ router.post(
 )
 
 
-router.delete(
-  "/:transactionId",
-  authenticate,
-  checkRole(["business", "admin"]),
-  deleteTransaction
-);
+
 
 
 

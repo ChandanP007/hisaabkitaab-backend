@@ -2,6 +2,7 @@ import {User} from "../models/model.user.js";
 import {Transaction} from "../models/model.transaction.js";
 import { sendEmail } from "../services/service.mailling.js";
 import { deleteFromBucket, uploadToBucket } from "../services/service.s3.js";
+import { generateTransactionId } from "../utils/generateTransactionId.js";
 
 export const createTransaction = async (req, res) => {
   try {
@@ -177,53 +178,100 @@ export const uploadFilesToS3 = async (req, res, next) => {
   }
 };
 
-export const deleteTransaction = async (req, res) => {
-  try {
-    const { transactionId } = req.params;
-    const userId = req.user._id;
 
-    // check if transaction exists
-    if (!transactionId) {
-      return res.status(400).json({ message: "Transaction ID is required" });
-    }
-
-    // check if transaction belongs to the business
-    const transaction = await Transaction.findOne({
-      transactionId,
-      business: userId,
-    });
-    if (!transaction) {
-      return res.status(400).json({ message: "Transaction not found" });
-    }
-
-    // delete the transaction from db
-    await transaction.deleteOne();
-
-    //delete the files from the bucket
-    await Promise.all(
-      transaction.attachments.map(async (attachment) => {
-        await deleteFromBucket(attachment.name, userId);
-      })
-    );
-
-    logger.info(
-      `Transaction ${transactionId} deleted by ${userId} from ${req.ip}`
-    );
-
-    res.status(200).json({ message: "Transaction deleted successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
 
 export const getTransactions = async (req, res) => {
+  const userId = req.user._id;
   try {
-    const userId = req.user._id;
-    const transactions = await Transaction.find({ business: userId });
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+
+
+    const transactions = await Transaction.find({
+      $or: [
+        { createdBy: user.email },
+        { collaborators: {$in: [user._id]} },
+        { ownerEmailId: user.email },
+      ]
+    })
+
+
     res.status(200).json({ transactions });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getTransactionById = async (req, res) => {
+  const transactionId = req.params.id;
+  const userId = req.user._id;
+
+  try {
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    res.status(200).json({ transaction });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const addNewTransaction = async (req, res, next) => {
+      const userId = req.user._id;
+
+      try{
+         const newTransactionData = req.body;
+         const {transactionTitle, description, ownerEmail, collaborators} = newTransactionData
+        //  console.log(newTransactionData)
+
+
+          //validate required fields
+          if (!transactionTitle || !ownerEmail || !collaborators) {
+            return res.status(400).json({ message: "All fields are required" });
+          }
+
+          //take out the collaborators email ids 
+          const collaboratorsEmail = collaborators.map((collaborator) => collaborator.email)
+
+          const collaboratorsProfiles = await User.find({
+            email: { $in: collaboratorsEmail },
+          });
+
+          const user = await User.findById(userId);
+
+          const newTransaction = {
+            transactionId: req.transactionId,
+            ownerEmailId: ownerEmail,
+            createdBy: user.email,
+            title: transactionTitle,
+            description: description,
+            status: "draft",
+            collaborators: collaboratorsProfiles
+
+          }
+
+          //create the transaction
+          const transaction = new Transaction(newTransaction);
+
+          await transaction.save();
+
+          next();
+
+      }
+      catch(error){
+          console.log(error)
+          res.status(500).json({message: "Internal server error"})
+      }
+}
+

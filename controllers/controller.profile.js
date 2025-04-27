@@ -1,7 +1,5 @@
-import {
-  User,
-} from "../models/model.user.js";
-
+import { User } from "../models/model.user.js";
+import logger from "../utils/logger.js";
 
 export const getProfile = async (req, res) => {
   try {
@@ -18,7 +16,6 @@ export const getProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
 
     // Send response
     res.status(200).json({ user });
@@ -58,13 +55,8 @@ export const deleteProfile = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const {
-      name,
-      company,
-      address
-    } = JSON.parse(req.body.userData);
+    const { company, address } = req.body;
 
-    
     const user = await User.findById(userId);
 
     //find the user
@@ -73,7 +65,6 @@ export const updateProfile = async (req, res) => {
     }
 
     //update user
-    user.name = name || user.name;
     user.address = address || user.address;
     user.companyName = company || user.companyName;
 
@@ -81,14 +72,11 @@ export const updateProfile = async (req, res) => {
 
     logger.info(`User updated their profile: ${user.email}, IP: ${req.ip}`);
 
-    res
-      .status(200)
-      .json({
-        message: "Profile updated successfully",
-      });
+    res.status(200).json({
+      message: "Profile updated successfully",
+    });
   } catch (error) {
     console.error("Update Profile Error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-

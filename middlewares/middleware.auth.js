@@ -5,7 +5,7 @@ dotenv.config()
 
 const authenticate = async(req,res,next) => {
     try{
-        const authHeader = req.headers['authorization']
+        const authHeader = req.headers['authorization'] 
         const token = req.cookies.token || authHeader && authHeader.split(' ')[1] // Bearer token;
 
         // console.log("Token "+token);
@@ -25,7 +25,6 @@ const authenticate = async(req,res,next) => {
 
         req.user = user
         
-        // console.log(req.user.role)
         next()
     }
     catch(error){

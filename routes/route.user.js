@@ -5,6 +5,10 @@ import { apiLimiter, forgotPasswordLimiter } from "../middlewares/middleware.rat
 import { upload } from "../middlewares/middleware.multer.js";
 import { updateProfile, getProfile } from "../controllers/controller.profile.js";
 import { createCategory, deleteCategoryById, getCategories } from "../controllers/controller.category.js";
+import { addNewUserClient, getUserClients } from "../controllers/controller.relation.js";
+import { addNewTransaction, getTransactionById, getTransactions } from "../controllers/controller.transaction.js";
+import { generateTransactionId } from "../utils/generateTransactionId.js";
+import { initTimeline } from "../controllers/controller.timeline.js";
 const router = Router();
 router.use(apiLimiter)
 
@@ -24,7 +28,8 @@ router.get('/profile', authenticate, getProfile)
 router.put('/profile', authenticate,  updateProfile)
 
 //clients and relation
-
+router.get('/clients', authenticate, getUserClients)
+router.post('/clients', authenticate, addNewUserClient) 
 
 //category routes
 router.get('/categories', authenticate, getCategories)
@@ -32,6 +37,10 @@ router.post('/categories', authenticate, createCategory)
 router.delete('/categories/:id', authenticate, deleteCategoryById)
 
 //transaction routes
+router.get('/transaction', authenticate, getTransactions)
+router.get('/transaction/:id',authenticate, getTransactionById)
+router.post('/transaction', authenticate, generateTransactionId, addNewTransaction, initTimeline)
+
 
 
 export default router;
