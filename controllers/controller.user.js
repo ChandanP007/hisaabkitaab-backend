@@ -168,11 +168,12 @@ export const loginUser = async (req,res) => {
         //generate token
         const token = jwt.sign({userId : user._id}, process.env.JWT_SECRET, {expiresIn: '1d'})
         res.cookie("token", token, {
-            httpOnly: true,
-            secure:  process.env.NODE_ENV === "production",
+            httpOnly: process.env.NODE_ENV === "production",
+            secure:  process.env.NODE_ENV === "production" ? "true"  : "false",
             sameSite: "None",
             maxAge: 24 * 60 * 60 * 1000, // 1 day
           });
+        
         
           
         //log activity
