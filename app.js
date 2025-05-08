@@ -9,6 +9,11 @@ import userRoutes from './routes/route.user.js'
 import transactionRoutes from './routes/route.transaction.js'
 import cookieParser from 'cookie-parser'
 
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    process.env.CLIENT_URL_2,
+]
+
 //env variables
 dotenv.config()
 
@@ -18,7 +23,14 @@ export const app = express()
 
 //middlewares
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = `The CORS policy for this site does not allow access from the specified Origin.`;
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 
