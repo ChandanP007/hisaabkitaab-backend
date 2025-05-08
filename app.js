@@ -10,7 +10,7 @@ import transactionRoutes from './routes/route.transaction.js'
 import cookieParser from 'cookie-parser'
 
 const allowedOrigins = [
-    process.env.CLIENT_URL,
+    process.env.NODE_ENV === 'production' ? process.env.DEP_URL : process.env.CLIENT_URL,
     process.env.CLIENT_URL_2,
 ]
 
@@ -20,6 +20,9 @@ dotenv.config()
 
 //app initialization
 export const app = express()
+
+// proxy setup for vercel
+app.set('trust proxy', 1);
 
 //middlewares
 app.use(cors({
