@@ -3,6 +3,7 @@ import {Transaction} from "../models/model.transaction.js";
 import { sendEmail } from "../services/service.mailling.js";
 import { deleteFromBucket, uploadToBucket } from "../services/service.s3.js";
 import { generateTransactionId } from "../utils/generateTransactionId.js";
+import { Document } from "../models/model.document.js";
 
 export const createTransaction = async (req, res) => {
   try {
@@ -138,39 +139,30 @@ export const createNewTransaction = async (req, res) => {
 
 export const uploadFilesToS3 = async (req, res, next) => {
   try {
-    const userId = req.user._id;
     const files = req.files;
+    const {customNames} = req.body;
+    const mimeTypes = files.map((file) => file.mimetype);
 
     if (!files) {
       return res.status(400).json({ message: "No files uploaded" });
     }
 
-    //check if user has enough capacity to upload files
-    const user = await User.findById(userId);
-
-    // const maxFiles = user.membershipType === "pro" ? 10 : 2;
-    // if (files.length > maxFiles) {
-    //   return res.status(400).json({
-    //     message: `You can upload upto ${maxFiles} files, Upgrade to increase the capacity`,
-    //   });
-    // }
-
     //upload files to bucket
     const fileUrls = await Promise.all(
-      files.map(async (file) => {
+      files.map(async (file,index) => {
         const result = await uploadToBucket(
           file.buffer,
-          req.transactionId + "_" + file.originalname,
+          req.transactionId + "-" + customNames[index],
           file.mimetype,
-          userId,
           "transaction"
         );
         return result.Location;
-      })
+    })
     );
 
     // res.status(200).json({ message: "Files uploaded", fileUrls });
     req.files = fileUrls;
+    req.mimeTypes = mimeTypes;
     next();
   } catch (error) {
     console.log(error);
@@ -179,6 +171,90 @@ export const uploadFilesToS3 = async (req, res, next) => {
 };
 
 
+export const addNewTransaction = async (req, res, next) => {
+  const userId = req.user._id;
+
+  try{
+     const {transactionTitle, description, ownerEmail, collaborators, customNames} = req.body;
+     const documents = req.files;
+     const mimeTypes = req.mimeTypes;
+     const parsedCollaborators = JSON.parse(collaborators);
+
+    //  console.log('Transaction Data:', {
+    //   ownerEmail,
+    //   transactionTitle,
+    //   description,
+    //   collaborators: parsedCollaborators,
+    //   documents, 
+    //   files: req.files,
+    // });
+
+
+      //validate required fields
+      if (!transactionTitle || !ownerEmail || !collaborators) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const collaboratorsEmail = parsedCollaborators.map((collaborator) => collaborator.email)
+
+      const collaboratorsProfiles = await User.find({
+        email: { $in: collaboratorsEmail },
+      });
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      //update files in the db
+      documents.forEach(async(file, index) => {
+        const newFile = {
+          transactionId: req.transactionId,
+          fileName: customNames[index],
+          fileUrl: file,
+          fileType: mimeTypes[index],
+          uploadedBy: user.name
+        }
+        const document = new Document(newFile);
+        await document.save()
+          .then(() => {
+            console.log("File uploaded successfully");
+          })
+          .catch((error) => {
+            console.error("Error uploading file:", error);
+          });
+      });
+
+      const documentsData = await Document.find({
+        transactionId: req.transactionId
+      });
+
+      const newTransaction = {
+        transactionId: req.transactionId,
+        ownerEmailId: ownerEmail,
+        createdBy: user.email,
+        title: transactionTitle,
+        description: description,
+        status: "inprogress",
+        collaborators: collaboratorsProfiles,
+        documents: documentsData.map((doc) => doc._id),
+      }
+
+      const transaction = new Transaction(newTransaction);
+
+      await transaction.save();
+
+      // res.status(200).json({message: "Transaction created successfully"});
+      
+      next();
+
+  }
+  catch(error){
+      console.log(error)
+      res.status(500).json({message: "Internal server error"})
+  }
+}
 
 export const getTransactions = async (req, res) => {
   const userId = req.user._id;
@@ -216,62 +292,161 @@ export const getTransactionById = async (req, res) => {
       transactionId: transactionId
     });
 
+    const ownerEmailId = transaction.ownerEmailId;
+    const ownerUser = await User.findOne({
+      email: ownerEmailId
+    });
+
     if (!transaction) {
       return res.status(404).json({ message: "Transaction not found" });
     }
 
-    res.status(200).json({ transaction });
+    //find the collborators from the User model using the ids in the transaction
+    let collaborators = await User.find({
+      _id: { $in: transaction.collaborators },
+    });
+    collaborators.push(ownerUser);
+
+    //requesting user has verified the transaction or not 
+    const userHasVerified = transaction.verifiedBy.includes(userId);
+
+    //updating the collaborators object to include the owner user
+     collaborators = collaborators.map((collaborator) => {
+      return {
+        ...collaborator._doc,
+        isOwner: collaborator._id.toString() === ownerUser._id.toString(),
+      };
+    });
+    
+
+    res.status(200).json({ transaction, collaborators, userHasVerified });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Internal server error" });
   }
 }
 
-export const addNewTransaction = async (req, res, next) => {
-      const userId = req.user._id;
+export const getTransactionDocumentsById = async (req, res) => {
+  const transactionId = req.params.id;
+  const userId = req.user._id;
 
-      try{
-         const newTransactionData = req.body;
-         const {transactionTitle, description, ownerEmail, collaborators} = newTransactionData
-        //  console.log(newTransactionData)
+  try {
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
 
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
 
-          //validate required fields
-          if (!transactionTitle || !ownerEmail || !collaborators) {
-            return res.status(400).json({ message: "All fields are required" });
-          }
+    const documents = await Document.find({
+      transactionId: transactionId
+    });
 
-          //take out the collaborators email ids 
-          const collaboratorsEmail = collaborators.map((collaborator) => collaborator.email)
-
-          const collaboratorsProfiles = await User.find({
-            email: { $in: collaboratorsEmail },
-          });
-
-          const user = await User.findById(userId);
-
-          const newTransaction = {
-            transactionId: req.transactionId,
-            ownerEmailId: ownerEmail,
-            createdBy: user.email,
-            title: transactionTitle,
-            description: description,
-            status: "draft",
-            collaborators: collaboratorsProfiles
-
-          }
-
-          //create the transaction
-          const transaction = new Transaction(newTransaction);
-
-          await transaction.save();
-
-          next();
-
-      }
-      catch(error){
-          console.log(error)
-          res.status(500).json({message: "Internal server error"})
-      }
+    res.status(200).json({ documents });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
+export const verifyTransactionById = async (req, res, next) => {
+  const transactionId = req.params.id;
+  const userId = req.user._id;
+
+  try {
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if(transaction.verifiedBy.includes(userId)){
+      return res.status(400).json({ message: "Transaction already verified by you" });
+    }
+
+    //update the status of the transaction to verified
+    transaction.verifiedBy.push(userId);
+    await transaction.save();
+
+    req.transactionId = transactionId;
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const patchTransactionDetailsById = async (req, res,next) => {
+  const transactionId = req.params.transactionId;
+  const userId = req.user._id;
+
+  try {
+    const {title, description} = req.body;
+
+    const user = await User.findById(userId);
+
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if(transaction.ownerEmailId !== user.email || transaction.createdBy !== user.email){
+      return res.status(403).json({ message: "You are not authorized to update this transaction" });
+    }
+
+    //update the transaction details
+    transaction.title = title || transaction.title;
+    transaction.description = description || transaction.description;
+    transaction.updatedAt = new Date();
+
+    await transaction.save();
+
+    req.transactionId = transactionId;
+    next();
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export const deleteTransactionById = async (req, res) => {
+  const transactionId = req.params.id;
+  const userId = req.user._id;
+
+  try {
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
+    const user = await User.findById(userId);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if(transaction.createdBy !== userId && transaction.ownerEmailId !== user.email){
+      return res.status(403).json({ message: "You are not authorized to delete this transaction" });
+    }
+
+    //delete the transaction
+    await Transaction.deleteOne({
+      transactionId: transactionId
+    });
+
+    //delete the documents from s3 bucket
+    await Document.deleteMany({
+      transactionId: transactionId
+    });
+
+    res.status(200).json({ message: "Transaction deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}

@@ -6,9 +6,9 @@ import { upload } from "../middlewares/middleware.multer.js";
 import { updateProfile, getProfile } from "../controllers/controller.profile.js";
 import { createCategory, deleteCategoryById, getCategories } from "../controllers/controller.category.js";
 import { addNewUserClient, getUserClients } from "../controllers/controller.relation.js";
-import { addNewTransaction, getTransactionById, getTransactions } from "../controllers/controller.transaction.js";
+import { addNewTransaction, deleteTransactionById, getTransactionById, getTransactionDocumentsById, getTransactions, patchTransactionDetailsById, uploadFilesToS3, verifyTransactionById } from "../controllers/controller.transaction.js";
 import { generateTransactionId } from "../utils/generateTransactionId.js";
-import { initTimeline } from "../controllers/controller.timeline.js";
+import { getTimelineById, initTimeline, updateTransactionDetailsTimeline, updateVerificationTimeline } from "../controllers/controller.timeline.js";
 const router = Router();
 router.use(apiLimiter)
 
@@ -39,8 +39,16 @@ router.delete('/categories/:id', authenticate, deleteCategoryById)
 //transaction routes
 router.get('/transaction', authenticate, getTransactions)
 router.get('/transaction/:id',authenticate, getTransactionById)
-router.post('/transaction', authenticate, generateTransactionId, addNewTransaction, initTimeline)
+router.get('/transaction/:id/documents', authenticate, getTransactionDocumentsById)
+router.post('/transaction/:id/verify', authenticate, verifyTransactionById, updateVerificationTimeline)
+router.post('/transaction', authenticate, generateTransactionId,
+    upload.array('documents[]',5),
+    uploadFilesToS3,
+    addNewTransaction, initTimeline)
+router.patch('/transaction/:transactionId/details', authenticate, patchTransactionDetailsById, updateTransactionDetailsTimeline)
+router.delete('/transaction/:id', authenticate, deleteTransactionById)
 
-
+//timeline routes
+router.get('/timeline/:id', authenticate, getTimelineById)
 
 export default router;

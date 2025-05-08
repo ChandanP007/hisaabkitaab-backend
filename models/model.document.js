@@ -1,0 +1,36 @@
+import { Schema, model } from "mongoose";
+
+const transactionDocumentSchema = new Schema({
+  transactionId: {
+    type: String,
+    required: true,
+  },
+  fileName: {
+    type: String,
+    required: true,
+  },
+  fileUrl: {
+    type: String,
+  },
+  fileType: {
+    type: String,
+    required: true,
+  },
+  uploadedBy: {
+    type: String,
+    required: true,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const Document = model(
+  "Document",
+  transactionDocumentSchema
+);
