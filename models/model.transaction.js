@@ -25,7 +25,7 @@ import {Schema, model} from 'mongoose';
     documents: [{ type: Schema.Types.ObjectId, ref: "Document" }],
     verifiedBy: [{ type: String}],
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date },
+    updatedAt: { type: Date, default: Date.now },
   });
 
 const transactionTimelineSchema = new Schema({

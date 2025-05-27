@@ -61,7 +61,7 @@ export const getTimelineById = async (req, res) => {
 export const updateVerificationTimeline = async (req, res) => {
     try {
       const transactionId = req.transactionId;
-      const performedByUserId = req.user._id;
+      const performedByUserId = req.user?._id || req.params.userid; 
 
       const verifiedActivity = new TransactionTimeline({
         transactionId,

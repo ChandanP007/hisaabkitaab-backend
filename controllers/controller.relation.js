@@ -53,7 +53,6 @@ export const getUserClients = async (req, res) => {
   }
 }
 
-
 export const addNewUserClient = async (req, res) => {
    try{
     const userId  = req.user._id;
@@ -67,14 +66,27 @@ export const addNewUserClient = async (req, res) => {
        if(newClientExisting.email == req.user.email){
         return res.status(400).json({ message: "You cannot add yourself as a client" });
         }
-       const newRelation = await BusinessRelationship.findOne({
+
+       const newRelationActive = await BusinessRelationship.findOne({
         primaryBusiness: userId,
         relatedBusiness: newClientExisting._id,
         isActive: true,
       });
+      const newRelationInactive = await BusinessRelationship.findOne({
+        primaryBusiness: userId,
+        relatedBusiness: newClientExisting._id,
+        isActive: false,
+      });
 
-      if (newRelation) {
+      if (newRelationActive) {
         return res.status(400).json({ message: "Relation already exists" });
+      }
+
+      if (newRelationInactive) {
+        // Reactivate the existing relationship
+        newRelationInactive.isActive = true;
+        await newRelationInactive.save();
+        return res.status(200).json({ message: "Client added successfully", userId, newClientExisting });
       }
 
       // Create a new relation
@@ -109,4 +121,33 @@ export const addNewUserClient = async (req, res) => {
       console.error(error);
       res.status(500).json({ message: "Internal server error" });
     }
+}
+
+export const removeUserClientById = async (req, res) => {
+  const userId = req.user._id;
+  const clientEmail = req.body.email;
+
+  try {
+    const clientId = await User.findOne({ email: clientEmail }).select("_id");
+
+    // Check if the relationship exists
+    const relationship = await BusinessRelationship.findOne({
+      primaryBusiness: userId || clientId,
+      relatedBusiness: clientId || userId,
+      isActive: true,
+    });
+
+    if (!relationship) {
+      return res.status(404).json({ message: "Relationship not found" });
+    }
+
+    // Deactivate the relationship
+    relationship.isActive = false;
+    await relationship.save();
+
+    res.status(200).json({ message: "Client removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }

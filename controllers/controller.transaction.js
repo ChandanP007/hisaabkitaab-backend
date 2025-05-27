@@ -1,5 +1,5 @@
 import {User} from "../models/model.user.js";
-import {Transaction} from "../models/model.transaction.js";
+import {Transaction, TransactionTimeline} from "../models/model.transaction.js";
 import { sendEmail } from "../services/service.mailling.js";
 import { deleteFromBucket, uploadToBucket } from "../services/service.s3.js";
 import { generateTransactionId } from "../utils/generateTransactionId.js";
@@ -245,6 +245,10 @@ export const addNewTransaction = async (req, res, next) => {
 
       await transaction.save();
 
+      //send emails to the collaborators
+
+      
+
       // res.status(200).json({message: "Transaction created successfully"});
       
       next();
@@ -284,8 +288,8 @@ export const getTransactions = async (req, res) => {
 };
 
 export const getTransactionById = async (req, res) => {
-  const transactionId = req.params.id;
-  const userId = req.user._id;
+  const transactionId = req.params.id || req.params.tid;
+  const userId = req.user?._id || req.params.userid;
 
   try {
     const transaction = await Transaction.findOne({
@@ -328,7 +332,6 @@ export const getTransactionById = async (req, res) => {
 
 export const getTransactionDocumentsById = async (req, res) => {
   const transactionId = req.params.id;
-  const userId = req.user._id;
 
   try {
     const transaction = await Transaction.findOne({
@@ -351,8 +354,8 @@ export const getTransactionDocumentsById = async (req, res) => {
 }
 
 export const verifyTransactionById = async (req, res, next) => {
-  const transactionId = req.params.id;
-  const userId = req.user._id;
+  const transactionId = req.params.id || req.params.tid;
+  const userId = req.user?._id || req.params.userid;
 
   try {
     const transaction = await Transaction.findOne({
@@ -369,9 +372,15 @@ export const verifyTransactionById = async (req, res, next) => {
 
     //update the status of the transaction to verified
     transaction.verifiedBy.push(userId);
+
+    if( transaction.verifiedBy.length === transaction.collaborators.length){
+      transaction.status = "completed";
+    }
+
     await transaction.save();
 
     req.transactionId = transactionId;
+
     next();
   } catch (error) {
     console.log(error);
@@ -417,8 +426,8 @@ export const patchTransactionDetailsById = async (req, res,next) => {
 }
 
 export const deleteTransactionById = async (req, res) => {
-  const transactionId = req.params.id;
-  const userId = req.user._id;
+  const transactionId = req.params.id || req.params.tid;;
+  const userId = req.user?._id || req.params.userid;
 
   try {
     const transaction = await Transaction.findOne({
@@ -443,6 +452,12 @@ export const deleteTransactionById = async (req, res) => {
     await Document.deleteMany({
       transactionId: transactionId
     });
+
+    //delete the timeline entries
+    await TransactionTimeline.deleteMany({
+      transactionId: transactionId
+    });
+
 
     res.status(200).json({ message: "Transaction deleted successfully" });
   } catch (error) {
