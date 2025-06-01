@@ -243,10 +243,25 @@ export const addNewTransaction = async (req, res, next) => {
 
       const transaction = new Transaction(newTransaction);
 
+      transaction.verifiedBy.push(userId); 
+
       await transaction.save();
 
       //send emails to the collaborators
-
+      for (const collaborator of collaboratorsProfiles) {
+        await sendEmail(
+          collaborator.email,
+          "New transaction initiated by " + user.companyName,
+          "transactionNotification.html",
+          {
+            userName: collaborator.name,
+            transactionTitle: transactionTitle,
+            transactionId: req.transactionId,
+            createdBy: user.name + " ( " +user.companyName + " ) ",
+            tlink: `${process.env.CLIENT_URL}/transaction/view?tid=${req.transactionId}&userId=${collaborator._id}`,
+          }
+        );
+      }
       
 
       // res.status(200).json({message: "Transaction created successfully"});
@@ -373,7 +388,7 @@ export const verifyTransactionById = async (req, res, next) => {
     //update the status of the transaction to verified
     transaction.verifiedBy.push(userId);
 
-    if( transaction.verifiedBy.length === transaction.collaborators.length){
+    if( transaction.verifiedBy.length-1 === transaction.collaborators.length){
       transaction.status = "completed";
     }
 
@@ -465,3 +480,68 @@ export const deleteTransactionById = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+
+export const addNewDocumentToTransaction = async (req, res) => {
+  const transactionId = req.params.id || req.params.tid;
+  const userId = req.user._id;
+
+  try {
+    const { customNames } = req.body;
+    const documents = req.files;
+    const mimeTypes = req.mimeTypes;
+
+
+    if(!documents || documents.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const transaction = await Transaction.findOne({
+      transactionId: transactionId
+    });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if(!transaction.collaborators.includes(userId) || !transaction.createdBy === userId ){
+      return res.status(403).json({ message: "You are not authorized to add documents to this transaction" });
+    }
+
+    const user = await User.findById(userId);
+
+    //update files in the db
+    documents.forEach(async (file, index) => {
+      const newFile = {
+        transactionId: transactionId,
+        fileName: customNames[index],
+        fileUrl: file,
+        fileType: mimeTypes[index],
+        uploadedBy: user.name
+      };
+      const document = new Document(newFile);
+      await document.save()
+        .then(() => {
+          console.log("File uploaded successfully");
+        })
+        .catch((error) => {
+          console.error("Error uploading file:", error);
+        });
+    });
+
+    const documentsData = await Document.find({
+      transactionId: transactionId
+    });
+    //update the transaction with the new documents
+    transaction.documents.push(...documentsData.map(doc => doc._id));
+
+    await transaction.save();
+
+    res.status(200).json({ message: "Documents added successfully", documents: documentsData });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
