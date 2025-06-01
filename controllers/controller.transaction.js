@@ -258,7 +258,7 @@ export const addNewTransaction = async (req, res, next) => {
             transactionTitle: transactionTitle,
             transactionId: req.transactionId,
             createdBy: user.name + " ( " +user.companyName + " ) ",
-            tlink: `${process.env.CLIENT_URL}/transaction/view?tid=${req.transactionId}&userId=${collaborator._id}`,
+            tlink: `${process.env.NODE_ENV == "development" ? process.env.CLIENT_URL : process.env.DEP_URL}/transaction/view?tid=${req.transactionId}&userId=${collaborator._id}`,
           }
         );
       }
