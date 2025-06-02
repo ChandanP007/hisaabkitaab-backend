@@ -9,7 +9,7 @@
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         line-height: 1.6;
-        color: #333333;
+        color: #4f46e5;
         margin: 0;
         padding: 0;
         background-color: #f7f9fc;
@@ -25,7 +25,7 @@
       }
 
       .header {
-        background-color: #333333;
+        background-color: #4f46e5;
         padding: 20px 20px;
         text-align: center;
       }
@@ -63,7 +63,7 @@
       .button {
         display: inline-block;
         padding: 12px 24px;
-        background-color: #333333;
+        background-color: #4f46e5;
         color: #ffffff !important;
         text-decoration: none;
         border-radius: 6px;
@@ -122,7 +122,7 @@
   <body>
     <div class="email-container">
       <div class="header">
-        <h1 style="color: white">You've been added as a collaborator</h1>
+        <h1 style="color: white">You've been added to a shared Ledger</h1>
       </div>
 
       <div class="content">
@@ -132,8 +132,11 @@
           HisaabKitaab.ai. This means you can view and contribute to this
           transaction.
         </p>
+        
+        <h5>Ledger Details : </h5>
 
         <div class="transaction-card">
+
           <p style="font-weight: 600; margin-bottom: 5px">
             Transaction ID :  {{transactionId}}
           </p>
@@ -149,8 +152,7 @@
         <a href="{{tlink}}" class="button">View Transaction</a>
 
         <p>
-          If you have any questions about this transaction or your account,
-          please reply to this email or contact our support team.
+          If you weren't expecting this, you can safely ignore this email.
         </p>
 
         <p>Best regards,<br />HisaabKitaab Team</p>

@@ -251,14 +251,14 @@ export const addNewTransaction = async (req, res, next) => {
       for (const collaborator of collaboratorsProfiles) {
         await sendEmail(
           collaborator.email,
-          "New transaction initiated by " + user.companyName,
+          "New transaction initiated by " + `${user.companyName ? user.companyName : user.name}`,
           "transactionNotification.html",
           {
             userName: collaborator.name,
             transactionTitle: transactionTitle,
             transactionId: req.transactionId,
-            createdBy: user.name + " ( " +user.companyName + " ) ",
-            tlink: `${process.env.NODE_ENV == "development" ? process.env.CLIENT_URL : process.env.DEP_URL}/transaction/view?tid=${req.transactionId}&userId=${collaborator._id}`,
+            createdBy: user.name + `${user.companyName ? ` (${user.companyName})` : ""}`,
+            tlink: `${process.env.CLIENT_URL}/transaction/view?tid=${req.transactionId}&userId=${collaborator._id}`,
           }
         );
       }
