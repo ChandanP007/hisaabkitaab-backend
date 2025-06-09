@@ -32,6 +32,8 @@ import {
     addNewDocumentToTransaction,
   addNewTransaction,
   deleteTransactionById,
+  getNumberOfDocuments,
+  getNumberOfTransactions,
   getTransactionById,
   getTransactionDocumentsById,
   getTransactions,
@@ -102,13 +104,14 @@ router.delete("/transaction/:id", authenticate, deleteTransactionById);
 //transaction public api routes
 router.get("/transaction/:id/documents", getTransactionDocumentsById);
 router.get("/transaction/:tid/user/:userid", getTransactionById);
+router.get("/transaction/metrics/transactioncount", authenticate, getNumberOfTransactions);
 router.post(
   "/transaction/:tid/verify/:userid",
   verifyTransactionById,
   updateVerificationTimeline
 );
 router.post(
-  "/transaction/:tid/updateFiles/:userid",
+  "/transaction/:tid/documents/:userid",
   upload.array("documents[]", 5),
   uploadFilesToS3,
   addNewDocumentToTransaction
@@ -116,5 +119,7 @@ router.post(
 
 //timeline routes
 router.get("/timeline/:id", authenticate, getTimelineById);
+
+router.get("/transaction/metrics/documents", authenticate, getNumberOfDocuments);
 
 export default router;

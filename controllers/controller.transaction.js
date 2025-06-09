@@ -464,9 +464,9 @@ export const deleteTransactionById = async (req, res) => {
     });
 
     //delete the documents from s3 bucket
-    await Document.deleteMany({
-      transactionId: transactionId
-    });
+    // await Document.deleteMany({
+    //   transactionId: transactionId
+    // });
 
     //delete the timeline entries
     await TransactionTimeline.deleteMany({
@@ -545,3 +545,48 @@ export const addNewDocumentToTransaction = async (req, res) => {
   }
 }
 
+
+//user metrics
+export const getNumberOfTransactions = async (req, res) => {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+
+    const numberOfTransactionInvolved = await Transaction.countDocuments({
+      $or: [
+        { createdBy: user.email },
+        { collaborators: userId },
+        { ownerEmailId: user.email },
+      ]
+    });
+
+    const numberOfTranactionPending = await Transaction.countDocuments({
+      $or: [
+        { createdBy: user.email, status: "inprogress" },
+        { collaborators: userId, status: "inprogress" },
+        { ownerEmailId: user.email, status: "inprogress" },
+      ]
+    });
+
+    res.status(200).json({ numberOfTransactionInvolved, numberOfTranactionPending });
+
+}
+export const getNumberOfDocuments = async(req, res)=> {
+  const userId = req.user._id;
+
+  try {
+    const user = await User.findById(userId);
+    const transactionIdsCreatedByUser = await Transaction.find({
+      createdBy: user.email
+    }).distinct("transactionId");
+
+    const noOfDocumentsOfThoseTransactions = await Document.countDocuments({
+      transactionId: { $in: transactionIdsCreatedByUser }
+    });
+
+    res.status(200).json({ numberOfDocuments : noOfDocumentsOfThoseTransactions });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
