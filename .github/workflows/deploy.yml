@@ -28,10 +28,7 @@ jobs:
         script: |
           cd ~/hisaabkitaab-backend
 
-          sudo docker container prune -f
-          sudo docker image prune -af
-          sudo docker volume prune -f
-          sudo docker network prune -f
+          sudo docker system prune -a --volumes --force
 
           sudo git pull origin main
           sudo docker compose down
