@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check SSH connection
+      run: |
+        ssh -i ${{ secrets.EC2_KEY }} -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "echo 'SSH connection successful'"
     - name: Checkout code
       uses: actions/checkout@v3
 
