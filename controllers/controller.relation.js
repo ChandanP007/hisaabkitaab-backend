@@ -59,7 +59,6 @@ export const addNewUserClient = async (req, res) => {
     const newClientData = req.body;
     const { name, email, companyName } = newClientData;
 
-    // Check if the new client already is associated with the hisaabkitaab(user)
     const newClientExisting = await User.findOne({email: email});
 
     if (newClientExisting) {
@@ -67,16 +66,23 @@ export const addNewUserClient = async (req, res) => {
         return res.status(400).json({ message: "You cannot add yourself as a client" });
         }
 
+        //Bug fix #1: 13/6/25 : User cannot add two clients with same email
+        if(newClientExisting.email === email){
+          return res.status(400).json({ message: "Client with this email already exists" });
+        }
+
        const newRelationActive = await BusinessRelationship.findOne({
         primaryBusiness: userId,
         relatedBusiness: newClientExisting._id,
         isActive: true,
       });
+
       const newRelationInactive = await BusinessRelationship.findOne({
         primaryBusiness: userId,
         relatedBusiness: newClientExisting._id,
         isActive: false,
       });
+
 
       if (newRelationActive) {
         return res.status(400).json({ message: "Relation already exists" });
@@ -97,6 +103,7 @@ export const addNewUserClient = async (req, res) => {
       await relation.save();
       return res.status(200).json({ message: "Client added successfully", userId, newClientExisting });
     }
+   
 
     // Create a new client
     const newClient = new User({
