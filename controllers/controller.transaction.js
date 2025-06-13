@@ -1,4 +1,4 @@
-import {User} from "../models/model.user.js";
+import {BusinessRelationship, User} from "../models/model.user.js";
 import {Transaction, TransactionTimeline} from "../models/model.transaction.js";
 import { sendEmail } from "../services/service.mailling.js";
 import { deleteFromBucket, uploadToBucket } from "../services/service.s3.js";
@@ -547,7 +547,7 @@ export const addNewDocumentToTransaction = async (req, res) => {
 
 
 //user metrics
-export const getNumberOfTransactions = async (req, res) => {
+export const getUserMetrics = async (req, res) => {
     const userId = req.user._id;
 
     const user = await User.findById(userId);
@@ -560,7 +560,7 @@ export const getNumberOfTransactions = async (req, res) => {
       ]
     });
 
-    const numberOfTranactionPending = await Transaction.countDocuments({
+    const numberOfTransactionPending = await Transaction.countDocuments({
       $or: [
         { createdBy: user.email, status: "inprogress" },
         { collaborators: userId, status: "inprogress" },
@@ -568,25 +568,22 @@ export const getNumberOfTransactions = async (req, res) => {
       ]
     });
 
-    res.status(200).json({ numberOfTransactionInvolved, numberOfTranactionPending });
-
-}
-export const getNumberOfDocuments = async(req, res)=> {
-  const userId = req.user._id;
-
-  try {
-    const user = await User.findById(userId);
-    const transactionIdsCreatedByUser = await Transaction.find({
-      createdBy: user.email
-    }).distinct("transactionId");
-
-    const noOfDocumentsOfThoseTransactions = await Document.countDocuments({
-      transactionId: { $in: transactionIdsCreatedByUser }
+    const numberOfDocumentsInVault = await Document.countDocuments({
+      $or : [
+        { uploadedByUid: userId },
+        { uploadedBy: user.name }
+      ]
     });
 
-    res.status(200).json({ numberOfDocuments : noOfDocumentsOfThoseTransactions });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+    const numberOfUserClients = await BusinessRelationship.countDocuments({
+      isActive: true,
+      $or: [
+        { primaryBusiness: userId },
+        { relatedBusiness: userId }
+      ]
+    })
+
+
+    res.status(200).json({ numberOfUserClients, numberOfTransactionInvolved, numberOfTransactionPending, numberOfDocumentsInVault });
+
 }

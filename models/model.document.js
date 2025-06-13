@@ -20,6 +20,9 @@ const transactionDocumentSchema = new Schema({
     type: String,
     required: true,
   },
+  uploadedByUid : {
+    type: String,
+  },
   updatedAt: {
     type: Date,
     default: Date.now,
